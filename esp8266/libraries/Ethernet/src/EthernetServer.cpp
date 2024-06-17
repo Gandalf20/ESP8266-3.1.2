@@ -22,13 +22,13 @@
 #include "Ethernet.h"
 #include "utility/w5100.h"
 
-uint16_t EthernetServer::server_port[MAX_SOCK_NUM];
+uint16_t EthernetServer::server_port[ETH_MAX_SOCK_NUM];
 
 
 void EthernetServer::begin()
 {
 	uint8_t sockindex = Ethernet.socketBegin(SnMR::TCP, _port);
-	if (sockindex < MAX_SOCK_NUM) {
+	if (sockindex < ETH_MAX_SOCK_NUM) {
 		if (Ethernet.socketListen(sockindex)) {
 			server_port[sockindex] = _port;
 		} else {
@@ -40,12 +40,12 @@ void EthernetServer::begin()
 EthernetClient EthernetServer::available()
 {
 	bool listening = false;
-	uint8_t sockindex = MAX_SOCK_NUM;
-	uint8_t chip, maxindex=MAX_SOCK_NUM;
+	uint8_t sockindex = ETH_MAX_SOCK_NUM;
+	uint8_t chip, maxindex=ETH_MAX_SOCK_NUM;
 
 	chip = W5100.getChip();
-	if (!chip) return EthernetClient(MAX_SOCK_NUM);
-#if MAX_SOCK_NUM > 4
+	if (!chip) return EthernetClient(ETH_MAX_SOCK_NUM);
+#if ETH_MAX_SOCK_NUM > 4
 	if (chip == 51) maxindex = 4; // W5100 chip never supports more than 4 sockets
 #endif
 	for (uint8_t i=0; i < maxindex; i++) {
@@ -75,18 +75,18 @@ EthernetClient EthernetServer::available()
 EthernetClient EthernetServer::accept()
 {
 	bool listening = false;
-	uint8_t sockindex = MAX_SOCK_NUM;
-	uint8_t chip, maxindex=MAX_SOCK_NUM;
+	uint8_t sockindex = ETH_MAX_SOCK_NUM;
+	uint8_t chip, maxindex=ETH_MAX_SOCK_NUM;
 
 	chip = W5100.getChip();
-	if (!chip) return EthernetClient(MAX_SOCK_NUM);
-#if MAX_SOCK_NUM > 4
+	if (!chip) return EthernetClient(ETH_MAX_SOCK_NUM);
+#if ETH_MAX_SOCK_NUM > 4
 	if (chip == 51) maxindex = 4; // W5100 chip never supports more than 4 sockets
 #endif
 	for (uint8_t i=0; i < maxindex; i++) {
 		if (server_port[i] == _port) {
 			uint8_t stat = Ethernet.socketStatus(i);
-			if (sockindex == MAX_SOCK_NUM &&
+			if (sockindex == ETH_MAX_SOCK_NUM &&
 			  (stat == SnSR::ESTABLISHED || stat == SnSR::CLOSE_WAIT)) {
 				// Return the connected client even if no data received.
 				// Some protocols like FTP expect the server to send the
@@ -106,8 +106,8 @@ EthernetClient EthernetServer::accept()
 
 EthernetServer::operator bool()
 {
-	uint8_t maxindex=MAX_SOCK_NUM;
-#if MAX_SOCK_NUM > 4
+	uint8_t maxindex=ETH_MAX_SOCK_NUM;
+#if ETH_MAX_SOCK_NUM > 4
 	if (W5100.getChip() == 51) maxindex = 4; // W5100 chip never supports more than 4 sockets
 #endif
 	for (uint8_t i=0; i < maxindex; i++) {
@@ -124,7 +124,7 @@ EthernetServer::operator bool()
 void EthernetServer::statusreport()
 {
 	Serial.printf("EthernetServer, port=%d\n", _port);
-	for (uint8_t i=0; i < MAX_SOCK_NUM; i++) {
+	for (uint8_t i=0; i < ETH_MAX_SOCK_NUM; i++) {
 		uint16_t port = server_port[i];
 		uint8_t stat = Ethernet.socketStatus(i);
 		const char *name;
@@ -160,11 +160,11 @@ size_t EthernetServer::write(uint8_t b)
 
 size_t EthernetServer::write(const uint8_t *buffer, size_t size)
 {
-	uint8_t chip, maxindex=MAX_SOCK_NUM;
+	uint8_t chip, maxindex=ETH_MAX_SOCK_NUM;
 
 	chip = W5100.getChip();
 	if (!chip) return 0;
-#if MAX_SOCK_NUM > 4
+#if ETH_MAX_SOCK_NUM > 4
 	if (chip == 51) maxindex = 4; // W5100 chip never supports more than 4 sockets
 #endif
 	available();

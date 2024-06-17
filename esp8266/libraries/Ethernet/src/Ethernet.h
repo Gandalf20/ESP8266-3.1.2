@@ -34,17 +34,17 @@
 // of RAM are used for each socket.  Reducing the maximum can save RAM, but
 // you are limited to fewer simultaneous connections.
 #if defined(RAMEND) && defined(RAMSTART) && ((RAMEND - RAMSTART) <= 2048)
-#define MAX_SOCK_NUM 4
+#define ETH_MAX_SOCK_NUM 4
 #else
-#define MAX_SOCK_NUM 8
+#define ETH_MAX_SOCK_NUM 8
 #endif
 
-// By default, each socket uses 2K buffers inside the Wiznet chip.  If
+// By default, each socket uses 2K buffers inside the WIZnet chip.  If
 // MAX_SOCK_NUM is set to fewer than the chip's maximum, uncommenting
-// this will use larger buffers within the Wiznet chip.  Large buffers
+// this will use larger buffers within the WIZnet chip.  Large buffers
 // can really help with UDP protocols like Artnet.  In theory larger
 // buffers should allow faster TCP over high-latency links, but this
-// does not always seem to work in practice (maybe Wiznet bugs?)
+// does not always seem to work in practice (maybe WIZnet bugs?)
 //#define ETHERNET_LARGE_BUFFERS
 
 
@@ -84,7 +84,7 @@ public:
 	static EthernetLinkStatus linkStatus();
 	static EthernetHardwareStatus hardwareStatus();
 
-	// Manaul configuration
+	// Manual configuration
 	static void begin(uint8_t *mac, IPAddress ip);
 	static void begin(uint8_t *mac, IPAddress ip, IPAddress dns);
 	static void begin(uint8_t *mac, IPAddress ip, IPAddress dns, IPAddress gateway);
@@ -147,7 +147,7 @@ private:
 extern EthernetClass Ethernet;
 
 
-#define UDP_TX_PACKET_MAX_SIZE 24
+#define ETH_UDP_TX_PACKET_MAX_SIZE 24
 
 class EthernetUDP : public UDP {
 private:
@@ -161,7 +161,7 @@ protected:
 	uint16_t _remaining; // remaining bytes of incoming packet yet to be processed
 
 public:
-	EthernetUDP() : sockindex(MAX_SOCK_NUM) {}  // Constructor
+	EthernetUDP() : sockindex(ETH_MAX_SOCK_NUM) {}  // Constructor
 	virtual uint8_t begin(uint16_t);      // initialize, start listening on specified port. Returns 1 if successful, 0 if there are no sockets available to use
 	virtual uint8_t beginMulticast(IPAddress, uint16_t);  // initialize, start listening on specified port. Returns 1 if successful, 0 if there are no sockets available to use
 	virtual void stop();  // Finish with the UDP socket
@@ -213,8 +213,9 @@ public:
 
 class EthernetClient : public Client {
 public:
-	EthernetClient() : sockindex(MAX_SOCK_NUM), _timeout(1000) { }
-	EthernetClient(uint8_t s) : sockindex(s), _timeout(1000) { }
+	EthernetClient() : _sockindex(ETH_MAX_SOCK_NUM), _timeout(1000) { }
+	EthernetClient(uint8_t s) : _sockindex(s), _timeout(1000) { }
+	virtual ~EthernetClient() {};
 
 	uint8_t status();
 	virtual int connect(IPAddress ip, uint16_t port);
@@ -229,12 +230,12 @@ public:
 	virtual void flush();
 	virtual void stop();
 	virtual uint8_t connected();
-	virtual operator bool() { return sockindex < MAX_SOCK_NUM; }
+	virtual operator bool() { return _sockindex < ETH_MAX_SOCK_NUM; }
 	virtual bool operator==(const bool value) { return bool() == value; }
 	virtual bool operator!=(const bool value) { return bool() != value; }
 	virtual bool operator==(const EthernetClient&);
 	virtual bool operator!=(const EthernetClient& rhs) { return !this->operator==(rhs); }
-	uint8_t getSocketNumber() const { return sockindex; }
+	uint8_t getSocketNumber() const { return _sockindex; }
 	virtual uint16_t localPort();
 	virtual IPAddress remoteIP();
 	virtual uint16_t remotePort();
@@ -245,7 +246,7 @@ public:
 	using Print::write;
 
 private:
-	uint8_t sockindex; // MAX_SOCK_NUM means client not in use
+	uint8_t _sockindex; // MAX_SOCK_NUM means client not in use
 	uint16_t _timeout;
 };
 
@@ -265,7 +266,7 @@ public:
 	//void statusreport();
 
 	// TODO: make private when socket allocation moves to EthernetClass
-	static uint16_t server_port[MAX_SOCK_NUM];
+	static uint16_t server_port[ETH_MAX_SOCK_NUM];
 };
 
 

@@ -38,7 +38,7 @@ typedef struct {
 	uint8_t  RX_inc; // how much have we advanced RX_RD
 } socketstate_t;
 
-static socketstate_t state[MAX_SOCK_NUM];
+static socketstate_t state[ETH_MAX_SOCK_NUM];
 
 
 static uint16_t getSnTX_FSR(uint8_t s);
@@ -62,12 +62,12 @@ void EthernetClass::socketPortRand(uint16_t n)
 
 uint8_t EthernetClass::socketBegin(uint8_t protocol, uint16_t port)
 {
-	uint8_t s, status[MAX_SOCK_NUM], chip, maxindex=MAX_SOCK_NUM;
+	uint8_t s, status[ETH_MAX_SOCK_NUM], chip, maxindex=ETH_MAX_SOCK_NUM;
 
 	// first check hardware compatibility
 	chip = W5100.getChip();
-	if (!chip) return MAX_SOCK_NUM; // immediate error if no hardware detected
-#if MAX_SOCK_NUM > 4
+	if (!chip) return ETH_MAX_SOCK_NUM; // immediate error if no hardware detected
+#if ETH_MAX_SOCK_NUM > 4
 	if (chip == 51) maxindex = 4; // W5100 chip never supports more than 4 sockets
 #endif
 	//Serial.printf("W5000socket begin, protocol=%d, port=%d\n", protocol, port);
@@ -89,14 +89,14 @@ uint8_t EthernetClass::socketBegin(uint8_t protocol, uint16_t port)
 #if 0
 	Serial.printf("W5000socket step3\n");
 	// next, use any that are effectively closed
-	for (s=0; s < MAX_SOCK_NUM; s++) {
+	for (s=0; s < ETH_MAX_SOCK_NUM; s++) {
 		uint8_t stat = status[s];
 		// TODO: this also needs to check if no more data
 		if (stat == SnSR::CLOSE_WAIT) goto closemakesocket;
 	}
 #endif
 	SPI.endTransaction();
-	return MAX_SOCK_NUM; // all sockets are in use
+	return ETH_MAX_SOCK_NUM; // all sockets are in use
 closemakesocket:
 	//Serial.printf("W5000socket close\n");
 	W5100.execCmdSn(s, Sock_CLOSE);
@@ -126,12 +126,12 @@ makesocket:
 // multicast version to set fields before open  thd
 uint8_t EthernetClass::socketBeginMulticast(uint8_t protocol, IPAddress ip, uint16_t port)
 {
-	uint8_t s, status[MAX_SOCK_NUM], chip, maxindex=MAX_SOCK_NUM;
+	uint8_t s, status[ETH_MAX_SOCK_NUM], chip, maxindex=ETH_MAX_SOCK_NUM;
 
 	// first check hardware compatibility
 	chip = W5100.getChip();
-	if (!chip) return MAX_SOCK_NUM; // immediate error if no hardware detected
-#if MAX_SOCK_NUM > 4
+	if (!chip) return ETH_MAX_SOCK_NUM; // immediate error if no hardware detected
+#if ETH_MAX_SOCK_NUM > 4
 	if (chip == 51) maxindex = 4; // W5100 chip never supports more than 4 sockets
 #endif
 	//Serial.printf("W5000socket begin, protocol=%d, port=%d\n", protocol, port);
@@ -153,14 +153,14 @@ uint8_t EthernetClass::socketBeginMulticast(uint8_t protocol, IPAddress ip, uint
 #if 0
 	Serial.printf("W5000socket step3\n");
 	// next, use any that are effectively closed
-	for (s=0; s < MAX_SOCK_NUM; s++) {
+	for (s=0; s < ETH_MAX_SOCK_NUM; s++) {
 		uint8_t stat = status[s];
 		// TODO: this also needs to check if no more data
 		if (stat == SnSR::CLOSE_WAIT) goto closemakesocket;
 	}
 #endif
 	SPI.endTransaction();
-	return MAX_SOCK_NUM; // all sockets are in use
+	return ETH_MAX_SOCK_NUM; // all sockets are in use
 closemakesocket:
 	//Serial.printf("W5000socket close\n");
 	W5100.execCmdSn(s, Sock_CLOSE);
@@ -536,4 +536,3 @@ bool EthernetClass::socketSendUDP(uint8_t s)
 	/* Sent ok */
 	return true;
 }
-

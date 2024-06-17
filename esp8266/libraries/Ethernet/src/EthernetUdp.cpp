@@ -1,5 +1,5 @@
 /*
- *  Udp.cpp: Library to send/receive UDP packets with the Arduino ethernet shield.
+ *  Udp.cpp: Library to send/receive UDP packets with the Arduino Ethernet Shield.
  *  This version only offers minimal wrapping of socket.cpp
  *  Drop Udp.h/.cpp into the Ethernet library directory at hardware/libraries/Ethernet/
  *
@@ -34,9 +34,9 @@
 /* Start EthernetUDP socket, listening at local port PORT */
 uint8_t EthernetUDP::begin(uint16_t port)
 {
-	if (sockindex < MAX_SOCK_NUM) Ethernet.socketClose(sockindex);
+	if (sockindex < ETH_MAX_SOCK_NUM) Ethernet.socketClose(sockindex);
 	sockindex = Ethernet.socketBegin(SnMR::UDP, port);
-	if (sockindex >= MAX_SOCK_NUM) return 0;
+	if (sockindex >= ETH_MAX_SOCK_NUM) return 0;
 	_port = port;
 	_remaining = 0;
 	return 1;
@@ -52,9 +52,9 @@ int EthernetUDP::available()
 /* Release any resources being used by this EthernetUDP instance */
 void EthernetUDP::stop()
 {
-	if (sockindex < MAX_SOCK_NUM) {
+	if (sockindex < ETH_MAX_SOCK_NUM) {
 		Ethernet.socketClose(sockindex);
-		sockindex = MAX_SOCK_NUM;
+		sockindex = ETH_MAX_SOCK_NUM;
 	}
 }
 
@@ -169,7 +169,7 @@ int EthernetUDP::peek()
 	// Unlike recv, peek doesn't check to see if there's any data available, so we must.
 	// If the user hasn't called parsePacket yet then return nothing otherwise they
 	// may get the UDP header
-	if (sockindex >= MAX_SOCK_NUM || _remaining == 0) return -1;
+	if (sockindex >= ETH_MAX_SOCK_NUM || _remaining == 0) return -1;
 	return Ethernet.socketPeek(sockindex);
 }
 
@@ -181,11 +181,10 @@ void EthernetUDP::flush()
 /* Start EthernetUDP socket, listening at local port PORT */
 uint8_t EthernetUDP::beginMulticast(IPAddress ip, uint16_t port)
 {
-	if (sockindex < MAX_SOCK_NUM) Ethernet.socketClose(sockindex);
+	if (sockindex < ETH_MAX_SOCK_NUM) Ethernet.socketClose(sockindex);
 	sockindex = Ethernet.socketBeginMulticast(SnMR::UDP | SnMR::MULTI, ip, port);
-	if (sockindex >= MAX_SOCK_NUM) return 0;
+	if (sockindex >= ETH_MAX_SOCK_NUM) return 0;
 	_port = port;
 	_remaining = 0;
 	return 1;
 }
-

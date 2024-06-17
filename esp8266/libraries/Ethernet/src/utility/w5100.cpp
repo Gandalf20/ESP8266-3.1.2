@@ -18,13 +18,13 @@
 /***************************************************/
 
 // If variant.h or other headers specifically define the
-// default SS pin for ethernet, use it.
+// default SS pin for Ethernet, use it.
 #if defined(PIN_SPI_SS_ETHERNET_LIB)
 #define SS_PIN_DEFAULT  PIN_SPI_SS_ETHERNET_LIB
 
 // MKR boards default to pin 5 for MKR ETH
 // Pins 8-10 are MOSI/SCK/MISO on MRK, so don't use pin 10
-#elif defined(USE_ARDUINO_MKR_PIN_LAYOUT) || defined(ARDUINO_SAMD_MKRZERO) || defined(ARDUINO_SAMD_MKR1000) || defined(ARDUINO_SAMD_MKRFox1200) || defined(ARDUINO_SAMD_MKRGSM1400) || defined(ARDUINO_SAMD_MKRWAN1300)
+#elif defined(USE_ARDUINO_MKR_PIN_LAYOUT) || defined(ARDUINO_SAMD_MKRZERO) || defined(ARDUINO_SAMD_MKR1000) || defined(ARDUINO_SAMD_MKRFox1200) || defined(ARDUINO_SAMD_MKRGSM1400) || defined(ARDUINO_SAMD_MKRWAN1300) || defined(ARDUINO_SAMD_MKRVIDOR4000)
 #define SS_PIN_DEFAULT  5
 
 // For boards using AVR, assume shields with SS on pin 10
@@ -113,18 +113,18 @@ uint8_t W5100Class::init(void)
 	if (isW5200()) {
 		CH_BASE_MSB = 0x40;
 #ifdef ETHERNET_LARGE_BUFFERS
-#if MAX_SOCK_NUM <= 1
+#if ETH_MAX_SOCK_NUM <= 1
 		SSIZE = 16384;
-#elif MAX_SOCK_NUM <= 2
+#elif ETH_MAX_SOCK_NUM <= 2
 		SSIZE = 8192;
-#elif MAX_SOCK_NUM <= 4
+#elif ETH_MAX_SOCK_NUM <= 4
 		SSIZE = 4096;
 #else
 		SSIZE = 2048;
 #endif
 		SMASK = SSIZE - 1;
 #endif
-		for (i=0; i<MAX_SOCK_NUM; i++) {
+		for (i=0; i<ETH_MAX_SOCK_NUM; i++) {
 			writeSnRX_SIZE(i, SSIZE >> 10);
 			writeSnTX_SIZE(i, SSIZE >> 10);
 		}
@@ -132,23 +132,23 @@ uint8_t W5100Class::init(void)
 			writeSnRX_SIZE(i, 0);
 			writeSnTX_SIZE(i, 0);
 		}
-	// Try W5500 next.  Wiznet finally seems to have implemented
+	// Try W5500 next.  WIZnet finally seems to have implemented
 	// SPI well with this chip.  It appears to be very resilient,
 	// so try it after the fragile W5200
 	} else if (isW5500()) {
 		CH_BASE_MSB = 0x10;
 #ifdef ETHERNET_LARGE_BUFFERS
-#if MAX_SOCK_NUM <= 1
+#if ETH_MAX_SOCK_NUM <= 1
 		SSIZE = 16384;
-#elif MAX_SOCK_NUM <= 2
+#elif ETH_MAX_SOCK_NUM <= 2
 		SSIZE = 8192;
-#elif MAX_SOCK_NUM <= 4
+#elif ETH_MAX_SOCK_NUM <= 4
 		SSIZE = 4096;
 #else
 		SSIZE = 2048;
 #endif
 		SMASK = SSIZE - 1;
-		for (i=0; i<MAX_SOCK_NUM; i++) {
+		for (i=0; i<ETH_MAX_SOCK_NUM; i++) {
 			writeSnRX_SIZE(i, SSIZE >> 10);
 			writeSnTX_SIZE(i, SSIZE >> 10);
 		}
@@ -165,11 +165,11 @@ uint8_t W5100Class::init(void)
 	} else if (isW5100()) {
 		CH_BASE_MSB = 0x04;
 #ifdef ETHERNET_LARGE_BUFFERS
-#if MAX_SOCK_NUM <= 1
+#if ETH_MAX_SOCK_NUM <= 1
 		SSIZE = 8192;
 		writeTMSR(0x03);
 		writeRMSR(0x03);
-#elif MAX_SOCK_NUM <= 2
+#elif ETH_MAX_SOCK_NUM <= 2
 		SSIZE = 4096;
 		writeTMSR(0x0A);
 		writeRMSR(0x0A);
@@ -197,12 +197,12 @@ uint8_t W5100Class::init(void)
 	return 1; // successful init
 }
 
-// Soft reset the Wiznet chip, by writing to its MR register reset bit
+// Soft reset the WIZnet chip, by writing to its MR register reset bit
 uint8_t W5100Class::softReset(void)
 {
 	uint16_t count=0;
 
-	//Serial.println("Wiznet soft reset");
+	//Serial.println("WIZnet soft reset");
 	// write to reset bit
 	writeMR(0x80);
 	// then wait for soft reset to complete
@@ -339,11 +339,11 @@ uint16_t W5100Class::write(uint16_t addr, const uint8_t *buf, uint16_t len)
 			//  10## #nnn nnnn nnnn
 			cmd[0] = addr >> 8;
 			cmd[1] = addr & 0xFF;
-			#if defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 1
+			#if defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 1
 			cmd[2] = 0x14;                       // 16K buffers
-			#elif defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 2
+			#elif defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 2
 			cmd[2] = ((addr >> 8) & 0x20) | 0x14; // 8K buffers
-			#elif defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 4
+			#elif defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 4
 			cmd[2] = ((addr >> 7) & 0x60) | 0x14; // 4K buffers
 			#else
 			cmd[2] = ((addr >> 6) & 0xE0) | 0x14; // 2K buffers
@@ -352,11 +352,11 @@ uint16_t W5100Class::write(uint16_t addr, const uint8_t *buf, uint16_t len)
 			// receive buffers
 			cmd[0] = addr >> 8;
 			cmd[1] = addr & 0xFF;
-			#if defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 1
+			#if defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 1
 			cmd[2] = 0x1C;                       // 16K buffers
-			#elif defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 2
+			#elif defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 2
 			cmd[2] = ((addr >> 8) & 0x20) | 0x1C; // 8K buffers
-			#elif defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 4
+			#elif defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 4
 			cmd[2] = ((addr >> 7) & 0x60) | 0x1C; // 4K buffers
 			#else
 			cmd[2] = ((addr >> 6) & 0xE0) | 0x1C; // 2K buffers
@@ -434,11 +434,11 @@ uint16_t W5100Class::read(uint16_t addr, uint8_t *buf, uint16_t len)
 			//  10## #nnn nnnn nnnn
 			cmd[0] = addr >> 8;
 			cmd[1] = addr & 0xFF;
-			#if defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 1
+			#if defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 1
 			cmd[2] = 0x10;                       // 16K buffers
-			#elif defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 2
+			#elif defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 2
 			cmd[2] = ((addr >> 8) & 0x20) | 0x10; // 8K buffers
-			#elif defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 4
+			#elif defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 4
 			cmd[2] = ((addr >> 7) & 0x60) | 0x10; // 4K buffers
 			#else
 			cmd[2] = ((addr >> 6) & 0xE0) | 0x10; // 2K buffers
@@ -447,11 +447,11 @@ uint16_t W5100Class::read(uint16_t addr, uint8_t *buf, uint16_t len)
 			// receive buffers
 			cmd[0] = addr >> 8;
 			cmd[1] = addr & 0xFF;
-			#if defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 1
+			#if defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 1
 			cmd[2] = 0x18;                       // 16K buffers
-			#elif defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 2
+			#elif defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 2
 			cmd[2] = ((addr >> 8) & 0x20) | 0x18; // 8K buffers
-			#elif defined(ETHERNET_LARGE_BUFFERS) && MAX_SOCK_NUM <= 4
+			#elif defined(ETHERNET_LARGE_BUFFERS) && ETH_MAX_SOCK_NUM <= 4
 			cmd[2] = ((addr >> 7) & 0x60) | 0x18; // 4K buffers
 			#else
 			cmd[2] = ((addr >> 6) & 0xE0) | 0x18; // 2K buffers
