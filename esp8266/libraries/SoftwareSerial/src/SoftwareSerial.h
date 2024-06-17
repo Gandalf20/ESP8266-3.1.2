@@ -16,14 +16,21 @@ Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
 */
 
 #ifndef __SoftwareSerial_h
 #define __SoftwareSerial_h
 
-#include "circular_queue/circular_queue.h"
+#include <circular_queue.h>
 #include <Stream.h>
+
+// Define lets bittiming calculation be based on cpu cycles instead
+// microseconds. This has higher resolution and general precision under
+// low-load conditions, but whenever the CPU frequency gets switched,
+// like during WiFi operation, it in turn is much more imprecise.
+// TODO: increase average timing precision in CCY mode by computing
+// bit durations in 10ths of micros.
+#undef CCY_TICKS
 
 namespace EspSoftwareSerial {
 
@@ -44,7 +51,7 @@ public:
         return (pin >= 0 && pin <= 16) && !isFlashInterfacePin(pin);
     #elif defined(ESP32)
         // Remove the strapping pins as defined in the datasheets, they affect bootup and other critical operations
-        // Remmove the flash memory pins on related devices, since using these causes memory access issues.
+        // Remove the flash memory pins on related devices, since using these causes memory access issues.
     #ifdef CONFIG_IDF_TARGET_ESP32
         // Datasheet https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf,
         // Pinout    https://docs.espressif.com/projects/esp-idf/en/latest/esp32/_images/esp32-devkitC-v4-pinout.jpg
@@ -292,7 +299,7 @@ protected:
     // Member variables
     int8_t m_rxPin = -1;
     int8_t m_txPin = -1;
-    bool m_invert;
+    bool m_invert = false;
 
 private:
     // It's legal to exceed the deadline, for instance,
@@ -318,11 +325,26 @@ private:
     static void rxBitISR(UARTBase* self);
     static void rxBitSyncISR(UARTBase* self);
 
-    static inline uint32_t IRAM_ATTR microsToTicks(uint32_t micros) __attribute__((always_inline)) {
-        return micros << 1;
+    static inline uint32_t IRAM_ATTR ticks() ALWAYS_INLINE_ATTR {
+#ifdef CCYTICKS
+        return ESP.getCycleCount() << 1;
+#else
+        return micros() << 1;
+#endif // CCYTICKS
     }
-    static inline uint32_t ticksToMicros(uint32_t ticks) __attribute__((always_inline)) {
+    static inline uint32_t IRAM_ATTR microsToTicks(uint32_t micros) ALWAYS_INLINE_ATTR {
+#ifdef CCYTICKS
+        return (ESP.getCpuFreqMHz() * micros) << 1;
+#else
+        return micros << 1;
+#endif // CCYTICKS
+    }
+    static inline uint32_t ticksToMicros(uint32_t ticks) ALWAYS_INLINE_ATTR {
+#ifdef CCYTICKS
+        return (ticks >> 1) / ESP.getCpuFreqMHz();
+#else
         return ticks >> 1;
+#endif // CCYTICKS
     }
 
     // Member variables
@@ -342,9 +364,9 @@ private:
     /// PDU bits include data, parity and stop bits; the start bit is not counted.
     uint8_t m_pduBits;
     bool m_intTxEnabled;
-    bool m_rxGPIOHasPullUp;
-    bool m_rxGPIOPullUpEnabled;
-    bool m_txGPIOOpenDrain;
+    bool m_rxGPIOHasPullUp = false;
+    bool m_rxGPIOPullUpEnabled = true;
+    bool m_txGPIOOpenDrain = false;
     Parity m_parityMode;
     uint8_t m_stopBits;
     bool m_lastReadParity;
@@ -366,8 +388,8 @@ private:
     // the ISR stores the relative bit times in the buffer. The inversion corrected level is used as sign bit (2's complement):
     // 1 = positive including 0, 0 = negative.
     std::unique_ptr<circular_queue<uint32_t, UARTBase*> > m_isrBuffer;
-    const Delegate<void(uint32_t&&), UARTBase*> m_isrBufferForEachDel = { [](UARTBase* self, uint32_t&& isrTick) { self->rxBits(isrTick); }, this };
-    std::atomic<bool> m_isrOverflow;
+    const Delegate<void(uint32_t&&), UARTBase*> m_isrBufferForEachDel { [](UARTBase* self, uint32_t&& isrTick) { self->rxBits(isrTick); }, this };
+    std::atomic<bool> m_isrOverflow { false };
     uint32_t m_isrLastTick;
     bool m_rxCurParity = false;
     Delegate<void(), void*> m_rxHandler;
@@ -430,8 +452,50 @@ using UART = BasicUART< GpioCapabilities >;
 }; // namespace EspSoftwareSerial
 
 using SoftwareSerial = EspSoftwareSerial::UART;
-using namespace EspSoftwareSerial;
+using SoftwareSerialParity = EspSoftwareSerial::Parity;
+using SoftwareSerialConfig = EspSoftwareSerial::Config;
+using EspSoftwareSerial::SWSERIAL_5N1;
+using EspSoftwareSerial::SWSERIAL_6N1;
+using EspSoftwareSerial::SWSERIAL_7N1;
+using EspSoftwareSerial::SWSERIAL_8N1;
+using EspSoftwareSerial::SWSERIAL_5E1;
+using EspSoftwareSerial::SWSERIAL_6E1;
+using EspSoftwareSerial::SWSERIAL_7E1;
+using EspSoftwareSerial::SWSERIAL_8E1;
+using EspSoftwareSerial::SWSERIAL_5O1;
+using EspSoftwareSerial::SWSERIAL_6O1;
+using EspSoftwareSerial::SWSERIAL_7O1;
+using EspSoftwareSerial::SWSERIAL_8O1;
+using EspSoftwareSerial::SWSERIAL_5M1;
+using EspSoftwareSerial::SWSERIAL_6M1;
+using EspSoftwareSerial::SWSERIAL_7M1;
+using EspSoftwareSerial::SWSERIAL_8M1;
+using EspSoftwareSerial::SWSERIAL_5S1;
+using EspSoftwareSerial::SWSERIAL_6S1;
+using EspSoftwareSerial::SWSERIAL_7S1;
+using EspSoftwareSerial::SWSERIAL_8S1;
+using EspSoftwareSerial::SWSERIAL_5N2;
+using EspSoftwareSerial::SWSERIAL_6N2;
+using EspSoftwareSerial::SWSERIAL_7N2;
+using EspSoftwareSerial::SWSERIAL_8N2;
+using EspSoftwareSerial::SWSERIAL_5E2;
+using EspSoftwareSerial::SWSERIAL_6E2;
+using EspSoftwareSerial::SWSERIAL_7E2;
+using EspSoftwareSerial::SWSERIAL_8E2;
+using EspSoftwareSerial::SWSERIAL_5O2;
+using EspSoftwareSerial::SWSERIAL_6O2;
+using EspSoftwareSerial::SWSERIAL_7O2;
+using EspSoftwareSerial::SWSERIAL_8O2;
+using EspSoftwareSerial::SWSERIAL_5M2;
+using EspSoftwareSerial::SWSERIAL_6M2;
+using EspSoftwareSerial::SWSERIAL_7M2;
+using EspSoftwareSerial::SWSERIAL_8M2;
+using EspSoftwareSerial::SWSERIAL_5S2;
+using EspSoftwareSerial::SWSERIAL_6S2;
+using EspSoftwareSerial::SWSERIAL_7S2;
+using EspSoftwareSerial::SWSERIAL_8S2;
 
+#if __GNUC__ < 12
 // The template member functions below must be in IRAM, but due to a bug GCC doesn't currently
 // honor the attribute. Instead, it is possible to do explicit specialization and adorn
 // these with the IRAM attribute:
@@ -442,6 +506,7 @@ extern template void delegate::detail::DelegateImpl<void*, void>::operator()() c
 extern template size_t circular_queue<uint32_t, EspSoftwareSerial::UARTBase*>::available() const;
 extern template bool circular_queue<uint32_t, EspSoftwareSerial::UARTBase*>::push(uint32_t&&);
 extern template bool circular_queue<uint32_t, EspSoftwareSerial::UARTBase*>::push(const uint32_t&);
+#endif // __GNUC__ < 12
 
 #endif // __SoftwareSerial_h
 
