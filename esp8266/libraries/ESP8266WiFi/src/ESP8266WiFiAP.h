@@ -36,7 +36,7 @@ class ESP8266WiFiAPClass {
         // ----------------------------------------------------------------------------------------------
 
     public:
-
+        bool espNowConfig(uint8_t channel, const char* password = "");
         bool softAP(const char* ssid, const char* psk = NULL, int channel = 1, int ssid_hidden = 0, int max_connection = 4, int beacon_interval = 100);
         bool softAP(const String& ssid,const String& psk = emptyString,int channel = 1,int ssid_hidden = 0,int max_connection = 4,int beacon_interval = 100);
         bool softAPConfig(IPAddress local_ip, IPAddress gateway, IPAddress subnet);
