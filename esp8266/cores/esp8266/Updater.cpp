@@ -119,7 +119,7 @@ bool UpdaterClass::begin(size_t size, int command, size_t _end, size_t _start, i
   //size of the update rounded to a sector
   size_t roundedSize = (size + FLASH_SECTOR_SIZE - 1) & (~(FLASH_SECTOR_SIZE - 1));
 
-  if (command == U_FLASH) {
+  if (command == U_FLASH || command == U_FLASH_NOLOAD) {
     //address of the end of the space available for sketch and update
    uintptr_t updateEndAddress = 0;
    if(_end == 0) updateEndAddress = FS_start - 0x40200000;
@@ -397,7 +397,7 @@ bool UpdaterClass::_writeBuffer(){
   FlashMode_t flashMode = FM_QIO;
   FlashMode_t bufferFlashMode = FM_QIO;
   //TODO - GZIP can't do this
-  if ((_currentAddress == _startAddress + FLASH_MODE_PAGE) && (_buffer[0] != 0x1f) && (_command == U_FLASH)) {
+  if ((_currentAddress == _startAddress + FLASH_MODE_PAGE) && (_buffer[0] != 0x1f) && (_command == U_FLASH || _command == U_FLASH_NOLOAD)) {
     flashMode = ESP.getFlashChipMode();
     #ifdef DEBUG_UPDATER
       DEBUG_UPDATER.printf_P(PSTR("Header: 0x%1X %1X %1X %1X\n"), _buffer[0], _buffer[1], _buffer[2], _buffer[3]);
@@ -483,7 +483,7 @@ bool UpdaterClass::_verifyHeader(uint8_t data) {
             return false;
         }
         return true;
-    } else if(_command == U_FS) {
+    } else if(_command == U_FS || _command == U_FLASH_NOLOAD) {
         // no check of FS possible with first byte.
         return true;
     }
@@ -526,7 +526,7 @@ bool UpdaterClass::_verifyEnd() {
 #endif
 
         return true;
-    } else if(_command == U_FS) {
+    } else if(_command == U_FS || _command == U_FLASH_NOLOAD) {
         // FS is already over written checks make no sense any more.
         return true;
     }

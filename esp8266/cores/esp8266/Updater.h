@@ -25,6 +25,7 @@
 #define UPDATE_ERROR_UNKNOWN_COMMAND    (16)
 
 #define U_FLASH   0
+#define U_FLASH_NOLOAD 50
 #define U_FS      100
 #define U_AUTH    200
 

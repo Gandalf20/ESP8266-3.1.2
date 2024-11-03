@@ -96,48 +96,7 @@ static bool softap_config_equal(const softap_config& lhs, const softap_config& r
  * @param max_connection    Max simultaneous connected clients, 0 - 8. https://bbs.espressif.com/viewtopic.php?f=46&t=481&p=1832&hilit=max_connection#p1832
  * @param beacon_interval   set arbitrary beacon interval (influences DTIM)
  */
-
-bool ESP8266WiFiAPClass::espNowConfig(uint8_t channel, const char* password) {
-
-    if(!WiFi.enableAP(true)) {
-        // enable AP failed
-        DEBUG_WIFI("[AP] enableAP failed!\n");
-        return false;
-    }
-
-    size_t psk_len = password ? strlen(password) : 0;
-    if(psk_len > 0 && (psk_len > 64 || psk_len < 8)) {
-        DEBUG_WIFI("[AP] fail psk length %zu, too long or short!\n", psk_len);
-        return false;
-    }
-
-    struct softap_config conf;
-    bool ret = true;
-
-    if(psk_len) {
-        conf.authmode = AUTH_WPA2_PSK;
-        memcpy(reinterpret_cast<char*>(conf.password), password, psk_len);
-        if (psk_len < sizeof(conf.password)) {
-            conf.password[psk_len] = 0;
-        }
-    } else {
-        conf.authmode = AUTH_OPEN;
-        conf.password[0] = 0;
-    }
-
-    conf.channel = channel;
-    conf.ssid_hidden = 1;
-    conf.max_connection = 8;
-    conf.beacon_interval = 60000;
-    conf.ssid[0] = 0;
-    conf.ssid_len = 0;
-    ETS_UART_INTR_DISABLE();
-    ret = wifi_softap_set_config_current(&conf);
-    ETS_UART_INTR_ENABLE();
-    return ret;
-}
-
-bool ESP8266WiFiAPClass::softAP(const char* ssid, const char* psk, int channel, int ssid_hidden, int max_connection, int beacon_interval) {
+bool ESP8266WiFiAPClass::softAP(const char* ssid, const char* psk, int channel, int ssid_hidden, int max_connection) {
 
     if(!WiFi.enableAP(true)) {
         // enable AP failed
@@ -180,7 +139,6 @@ bool ESP8266WiFiAPClass::softAP(const char* ssid, const char* psk, int channel, 
     conf.channel = channel;
     conf.ssid_hidden = ssid_hidden;
     conf.max_connection = max_connection;
-    conf.beacon_interval = beacon_interval;
 
     struct softap_config conf_compare;
     if(WiFi._persistent){
@@ -231,8 +189,8 @@ bool ESP8266WiFiAPClass::softAP(const char* ssid, const char* psk, int channel, 
     return ret;
 }
 
-bool ESP8266WiFiAPClass::softAP(const String& ssid, const String& psk, int channel, int ssid_hidden, int max_connection, int beacon_interval) {
-    return softAP(ssid.c_str(), psk.c_str(), channel, ssid_hidden, max_connection, beacon_interval);
+bool ESP8266WiFiAPClass::softAP(const String& ssid, const String& psk, int channel, int ssid_hidden, int max_connection) {
+    return softAP(ssid.c_str(), psk.c_str(), channel, ssid_hidden, max_connection);
 }
 
 /**
