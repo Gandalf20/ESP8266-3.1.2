@@ -188,8 +188,10 @@ tools.esptool.upload.network_pattern="{network_cmd}" -I "{runtime.platform.path}
 
 tools.mkspiffs.cmd=mkspiffs
 tools.mkspiffs.cmd.windows=mkspiffs.exe
-tools.mkspiffs.path={runtime.tools.mkspiffs.path}
+tools.mkspiffs.path={runtime.platform.path)/tools/mkspiffs
+tools.mkspiffs.path.windows={runtime.platform.path)\tools\mkspiffs
 
 tools.mklittlefs.cmd=mklittlefs
 tools.mklittlefs.cmd.windows=mklittlefs.exe
 tools.mklittlefs.path={runtime.platform.path}/tools/mklittlefs
+tools.mklittlefs.path.windows={runtime.platform.path}\tools\mklittlefs

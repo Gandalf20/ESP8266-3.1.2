@@ -398,7 +398,7 @@ bool ESP8266HTTPUpdate::runUpdate(Stream& in, uint32_t size, const String& md5, 
         Update.onProgress(_cbProgress);
     }
 
-    if(!Update.begin(size, command, _ledPin, _ledOn)) {
+    if(!Update.begin(size, command, 0, 0, _ledPin, _ledOn)) {
         _setLastError(Update.getError());
         Update.printError(error);
         error.trim(); // remove line ending
